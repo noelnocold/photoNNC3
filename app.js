@@ -16,6 +16,8 @@ const carouselDots = document.getElementById('carousel-dots');
 const canvasFinal = document.getElementById('canvas-final');
 const btnToggleQr = document.getElementById('btn-toggle-qr');
 const qrStatusText = document.getElementById('qr-status-text');
+const btnToggleDouble = document.getElementById('btn-toggle-double');
+const doubleStatusText = document.getElementById('double-status-text');
 
 // Background Animation Layers
 const bgLayerBack = document.getElementById('carousel-bg-layer-back');
@@ -34,8 +36,9 @@ let currentFilter = 'none';
 let currentEffect = 'none';
 let isCapturing = false;
 
-// QR Code State
+// QR Code & Double Strip State
 let isQrActive = false;
+let isDoubleActive = false;
 let qrImageObj = null;
 const QR_FILE_PATH = 'asset/qr.png';
 
@@ -53,45 +56,29 @@ let currentBgFrameIndex = -1;
 let scrollSettleTimer = null;
 const assetImageCache = {};
 
-// --- LOAD TEMPLATES TRỰC TIẾP TỪ THƯ MỤC asset (tiền tố template_*) ---
-async function loadTemplatesFromAsset() {
-    frameData = [];
-    const potentialTemplates = [];
-    for (let i = 1; i <= 10; i++) {
-        potentialTemplates.push(`template_${i}.png`);
-    }
+// --- LOAD TEMPLATES ---
+// Tên file format: template_N_RRGGBB_RRGGBB.png (2 mã màu HEX không có #)
+// Hệ thống tự thêm # khi sử dụng. Ví dụ: template_1_fca5a5_fecaca.png
+function loadTemplatesFromAsset() {
+    // Danh sách file template với 2 màu pastel mã hóa trong tên
+    const templateFiles = [
+        'asset/template_1_fca5a5_fecaca.png',  // Template 1: 2 tone đỏ pastel
+        'asset/template_2_bbf7d0_6ee7b7.png',  // Template 2: 2 tone xanh lá pastel
+    ];
 
-    const loadPromises = potentialTemplates.map(fileName => {
-        return new Promise(resolve => {
-            const img = new Image();
-            img.onload = () => {
-                const num = fileName.replace(/[^0-9]/g, '') || '1';
-                resolve({
-                    id: fileName.replace('.png', ''),
-                    name: `Template ${num}`,
-                    src: `asset/${fileName}`,
-                    img: img
-                });
-            };
-            img.onerror = () => resolve(null);
-            img.src = `asset/${fileName}`;
-        });
+    frameData = templateFiles.map((src, idx) => {
+        // Trích 2 mã màu HEX từ tên file, tự động thêm # vào đầu
+        const matches = src.match(/_([0-9a-fA-F]{6})_([0-9a-fA-F]{6})\./);
+        const color1 = matches ? `#${matches[1]}` : '#f3f4f6';
+        const color2 = matches ? `#${matches[2]}` : '#e5e7eb';
+
+        const img = new Image();
+        img.src = src;
+        const id = `template_${idx + 1}`;
+        assetImageCache[id] = img;
+
+        return { id, name: `Template ${idx + 1}`, src, img, color1, color2 };
     });
-
-    const results = await Promise.all(loadPromises);
-    const validTemplates = results.filter(t => t !== null);
-
-    if (validTemplates.length > 0) {
-        frameData = validTemplates;
-        validTemplates.forEach(t => {
-            assetImageCache[t.id] = t.img;
-        });
-    } else {
-        frameData = [
-            { id: 'template_1', name: 'Template 1', src: 'asset/template_1.png' },
-            { id: 'template_2', name: 'Template 2', src: 'asset/template_2.png' }
-        ];
-    }
 
     // Nạp sẵn ảnh QR
     qrImageObj = new Image();
@@ -107,16 +94,22 @@ async function initCamera() {
             audio: false
         });
         video.srcObject = stream;
+        // Gọi play() tường minh để camera hiển thị ngay, không chờ autoplay browser
+        video.play().catch(() => {});
         document.getElementById('cam-error').classList.add('hidden');
     } catch (err) {
         console.error('Camera access error:', err);
         document.getElementById('cam-error').classList.remove('hidden');
     }
 }
-window.addEventListener('load', () => {
+
+// Gọi camera ngay khi DOM sẵn sàng (không chờ load toàn bộ tài nguyên)
+// DOMContentLoaded nhanh hơn 'load' vì không cần đợi Tailwind CDN
+document.addEventListener('DOMContentLoaded', () => {
     initCamera();
     initDynamicTitle();
 });
+
 
 // --- DYNAMIC TYPEWRITER TITLE EFFECT ---
 function initDynamicTitle() {
@@ -389,7 +382,7 @@ btnToggleQr.addEventListener('click', () => {
         }
     } else {
         btnToggleQr.classList.remove('active');
-        qrStatusText.innerText = 'Chèn Mã QR';
+        qrStatusText.innerText = 'Chèn QR';
     }
     updateQrBadgesVisibility();
 });
@@ -405,37 +398,57 @@ function updateQrBadgesVisibility() {
     });
 }
 
-// --- DYNAMIC BACKGROUND & EXPAND-FROM-CENTER EFFECT ---
+// --- DOUBLE STRIP (BẢN ĐÔI x2) TOGGLE FEATURE ---
+btnToggleDouble.addEventListener('click', () => {
+    isDoubleActive = !isDoubleActive;
+    if (isDoubleActive) {
+        btnToggleDouble.classList.add('active');
+        doubleStatusText.innerText = 'Đã Bật Đôi';
+    } else {
+        btnToggleDouble.classList.remove('active');
+        doubleStatusText.innerText = 'Bản Đôi (x2)';
+    }
+    renderCarousel();
+});
+
+// --- DYNAMIC BACKGROUND: 2 hình tròn blurred, hiệu ứng mở rộng từ tâm ---
 function updateCarouselBackground(newIndex, animate = true) {
     if (!frameData || frameData.length === 0) return;
     if (newIndex < 0 || newIndex >= frameData.length) return;
-    if (newIndex === currentBgFrameIndex && animate) return;
+    if (newIndex === currentBgFrameIndex) return;
 
-    // Lấy đúng đường dẫn file ảnh khung template (asset/template_1.png, asset/template_2.png...)
     const frame = frameData[newIndex];
-    if (!frame || !frame.src) return;
-    const bgUrl = frame.src;
+    if (!frame) return;
+
+    // 2 màu pastel từ tên file (# đã được thêm tự động khi load)
+    const c1 = frame.color1 || '#fca5a5';
+    const c2 = frame.color2 || '#fecaca';
+
+    // 2 hình tròn nhỏ gọn để blur rõ nét, không lan thành dải gradient
+    const gradient = `radial-gradient(circle at 22% 28%, ${c1} 0%, transparent 38%),
+                      radial-gradient(circle at 76% 70%, ${c2} 0%, transparent 33%)`;
+
+    currentBgFrameIndex = newIndex;
+
+    // Set gradient lên back layer ngay (không animate)
+    bgLayerBack.style.background = gradient;
 
     if (!animate) {
-        bgLayerBack.style.backgroundImage = `url("${bgUrl}")`;
-        bgLayerFront.style.backgroundImage = `url("${bgUrl}")`;
-        bgLayerFront.classList.remove('bg-expand-active');
-        currentBgFrameIndex = newIndex;
+        bgLayerFront.style.transition = 'none';
+        bgLayerFront.style.clipPath = 'circle(150% at 50% 50%)';
+        bgLayerFront.style.background = gradient;
         return;
     }
 
-    // Hiệu ứng mở rộng từ tâm cho background của khung đang chọn
-    bgLayerFront.style.backgroundImage = `url("${bgUrl}")`;
-    bgLayerFront.classList.remove('bg-expand-active');
-    void bgLayerFront.offsetWidth; // Force CSS reflow
-    bgLayerFront.classList.add('bg-expand-active');
+    // Front layer: nhận gradient mới → bắt đầu đóng → mở ra từ tâm
+    bgLayerFront.style.transition = 'none';
+    bgLayerFront.style.background = gradient;
+    bgLayerFront.style.clipPath = 'circle(0% at 50% 50%)';
 
-    // Sau khi hoạt ảnh kết thúc, đồng bộ lại lớp nền phía sau
-    setTimeout(() => {
-        bgLayerBack.style.backgroundImage = `url("${bgUrl}")`;
-        bgLayerFront.classList.remove('bg-expand-active');
-        currentBgFrameIndex = newIndex;
-    }, 750);
+    void bgLayerFront.offsetWidth; // Force reflow
+
+    bgLayerFront.style.transition = 'clip-path 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    bgLayerFront.style.clipPath = 'circle(150% at 50% 50%)';
 }
 
 // --- CAROUSEL RENDERING & CONTROLS ---
@@ -453,7 +466,11 @@ async function showResults() {
     activeFrameIndex = 0;
     updateDots(0);
 
-    // Khởi tạo background ban đầu
+    // Reset và hiển thị ngay background của template đầu tiên (không animate)
+    currentBgFrameIndex = -1;
+    bgLayerBack.style.transition = 'none';
+    bgLayerFront.style.transition = 'none';
+    bgLayerFront.style.clipPath = 'circle(150% at 50% 50%)';
     updateCarouselBackground(0, false);
 }
 
@@ -471,34 +488,40 @@ function renderCarousel() {
         const slide = document.createElement('div');
         slide.className = 'w-full flex-shrink-0 snap-center flex justify-center items-center px-4 relative z-10 py-2';
 
-        // Khung ảnh photostrip với chiều cao rõ ràng, co giãn theo tỉ lệ 480/1480
-        let strip = `
-        <div class="relative shadow-[0_25px_60px_rgba(0,0,0,0.25)] rounded-md overflow-hidden transition-transform duration-300 hover:scale-[1.02] h-[480px] md:h-[540px]" style="aspect-ratio: 480/1480;">
-            <div class="absolute inset-0 bg-white"></div>
-            <!-- Khung chứa 4 ảnh -->
-            <div class="absolute inset-0 flex flex-col" style="padding: 8.333%; gap: 2.7%;">
-                ${photos.map(p => `<img src="${p}" class="w-full aspect-[4/3] object-cover rounded-sm shadow-inner" style="transform: scaleX(-1);" />`).join('')}
+        const singleStripHtml = `
+            <div class="relative shadow-[0_25px_60px_rgba(0,0,0,0.25)] rounded-md overflow-hidden transition-transform duration-300 hover:scale-[1.02] ${isDoubleActive ? 'h-[360px] sm:h-[440px] md:h-[500px]' : 'h-[440px] sm:h-[480px] md:h-[540px]'}" style="aspect-ratio: 480/1480;">
+                <div class="absolute inset-0 bg-white"></div>
+                <!-- Khung chứa 4 ảnh -->
+                <div class="absolute inset-0 flex flex-col" style="padding: 8.333%; gap: 2.7%;">
+                    ${photos.map(p => `<img src="${p}" class="w-full aspect-[4/3] object-cover rounded-sm shadow-inner" style="transform: scaleX(-1);" />`).join('')}
+                </div>
+                <!-- Khung template từ thư mục asset -->
+                <img class="absolute inset-0 w-full h-full object-cover pointer-events-none z-10" src="${frame.src}" onerror="this.style.display='none'" />
+                <!-- Mã QR ở góc dưới cùng bên phải sát cạnh -->
+                <div class="qr-preview-badge ${isQrActive ? 'visible' : ''}">
+                    <img src="${QR_FILE_PATH}" class="w-full h-full object-contain" />
+                </div>
             </div>
         `;
 
-        // Khung template từ thư mục asset
-        strip += `<img class="absolute inset-0 w-full h-full object-cover pointer-events-none z-10" src="${frame.src}" />`;
+        if (isDoubleActive) {
+            slide.innerHTML = `
+                <div class="flex items-center justify-center gap-2 sm:gap-3">
+                    ${singleStripHtml}
+                    <div class="h-64 border-r border-dashed border-gray-400/50 hidden sm:block"></div>
+                    ${singleStripHtml}
+                </div>
+            `;
+        } else {
+            slide.innerHTML = singleStripHtml;
+        }
 
-        // Mã QR ở góc dưới cùng bên phải sát cạnh
-        strip += `
-            <div class="qr-preview-badge ${isQrActive ? 'visible' : ''}">
-                <img src="${QR_FILE_PATH}" class="w-full h-full object-contain" />
-            </div>
-        `;
-
-        strip += `</div>`;
-        slide.innerHTML = strip;
         carousel.appendChild(slide);
 
         // Dot indicator
         const dot = document.createElement('div');
         dot.id = `dot-${idx}`;
-        dot.className = `h-2 rounded-full transition-all duration-300 cursor-pointer ${idx === 0 ? 'bg-[#b91c1c] w-5' : 'bg-white/60 w-2'}`;
+        dot.className = `h-2 rounded-full transition-all duration-300 cursor-pointer ${idx === activeFrameIndex ? 'bg-[#b91c1c] w-5 shadow-sm' : 'bg-white/60 w-2'}`;
         dot.addEventListener('click', () => {
             const targetSlide = carousel.querySelectorAll('.snap-center')[idx];
             if (targetSlide) {
@@ -598,7 +621,7 @@ function roundRect(ctx, x, y, width, height, radius) {
     ctx.closePath();
 }
 
-// --- EXPORT FINAL IMAGE ---
+// --- EXPORT FINAL IMAGE (HỖ TRỢ CẢ BẢN ĐƠN VÀ BẢN ĐÔI DOUBLE STRIP) ---
 document.getElementById('btn-download').addEventListener('click', async function () {
     const originalHTML = this.innerHTML;
     this.innerHTML = `
@@ -612,72 +635,104 @@ document.getElementById('btn-download').addEventListener('click', async function
     await wait(100);
 
     try {
-        canvasFinal.width = STRIP_WIDTH;
+        const totalStrips = isDoubleActive ? 2 : 1;
+        canvasFinal.width = STRIP_WIDTH * totalStrips;
         canvasFinal.height = STRIP_HEIGHT;
         const ctx = canvasFinal.getContext('2d');
         const frame = frameData[activeFrameIndex];
 
-        // Nền trắng cơ bản
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, STRIP_WIDTH, STRIP_HEIGHT);
-
-        // Vẽ 4 ảnh chụp
-        for (let i = 0; i < 4; i++) {
-            if (photos[i]) {
-                const img = new Image();
-                img.src = photos[i];
-                await new Promise(r => img.onload = r);
-                const yPos = GAP + (i * (PHOTO_HEIGHT + GAP));
-                ctx.save();
-                ctx.translate(GAP + PHOTO_WIDTH, yPos);
-                ctx.scale(-1, 1);
-                ctx.drawImage(img, 0, 0, PHOTO_WIDTH, PHOTO_HEIGHT);
-                ctx.restore();
-            }
-        }
-
-        // Vẽ khung template đè lên trên từ thư mục asset
+        // Nạp trước frame template
         let frameImg = assetImageCache[frame.id] || frame.img;
         if (!frameImg || !frameImg.complete) {
             frameImg = new Image();
             frameImg.src = frame.src;
             await new Promise(r => frameImg.onload = r);
         }
-        ctx.drawImage(frameImg, 0, 0, STRIP_WIDTH, STRIP_HEIGHT);
 
-        // Vẽ mã QR ở góc dưới cùng bên phải sát cạnh nếu được bật
+        // Nạp trước QR image nếu bật
+        let qrImg = null;
         if (isQrActive) {
-            let qrImg = qrImageObj;
+            qrImg = qrImageObj;
             if (!qrImg || !qrImg.complete) {
                 qrImg = new Image();
                 qrImg.src = QR_FILE_PATH;
                 await new Promise(r => qrImg.onload = r);
             }
+        }
 
-            const qrSize = 85;
-            const qrMargin = 12; // Sát mép phải và mép dưới
-            const qrX = STRIP_WIDTH - qrSize - qrMargin;
-            const qrY = STRIP_HEIGHT - qrSize - qrMargin;
+        // Nạp 4 ảnh chụp
+        const loadedPhotos = [];
+        for (let i = 0; i < 4; i++) {
+            if (photos[i]) {
+                const img = new Image();
+                img.src = photos[i];
+                await new Promise(r => img.onload = r);
+                loadedPhotos.push(img);
+            }
+        }
 
-            // Card nền trắng viền bo nhẹ tạo độ tương phản cao cho QR
-            ctx.save();
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            ctx.shadowBlur = 6;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 2;
+        // Vẽ từng dải ảnh (1 dải đơn hoặc 2 dải đôi)
+        for (let s = 0; s < totalStrips; s++) {
+            const offsetX = s * STRIP_WIDTH;
+
+            // Nền trắng cơ bản
             ctx.fillStyle = '#ffffff';
-            roundRect(ctx, qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6);
-            ctx.fill();
-            ctx.restore();
+            ctx.fillRect(offsetX, 0, STRIP_WIDTH, STRIP_HEIGHT);
 
-            // Vẽ QR image
-            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+            // Vẽ 4 ảnh chụp
+            for (let i = 0; i < loadedPhotos.length; i++) {
+                const img = loadedPhotos[i];
+                const yPos = GAP + (i * (PHOTO_HEIGHT + GAP));
+                ctx.save();
+                ctx.translate(offsetX + GAP + PHOTO_WIDTH, yPos);
+                ctx.scale(-1, 1);
+                ctx.drawImage(img, 0, 0, PHOTO_WIDTH, PHOTO_HEIGHT);
+                ctx.restore();
+            }
+
+            // Vẽ khung template đè lên trên từ thư mục asset
+            ctx.drawImage(frameImg, offsetX, 0, STRIP_WIDTH, STRIP_HEIGHT);
+
+            // Vẽ mã QR ở góc dưới cùng bên phải sát cạnh nếu được bật
+            if (isQrActive && qrImg) {
+                const qrSize = 85;
+                const qrMargin = 12; // Sát mép phải và mép dưới
+                const qrX = offsetX + STRIP_WIDTH - qrSize - qrMargin;
+                const qrY = STRIP_HEIGHT - qrSize - qrMargin;
+
+                // Card nền trắng viền bo nhẹ tạo độ tương phản cao cho QR
+                ctx.save();
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 2;
+                ctx.fillStyle = '#ffffff';
+                roundRect(ctx, qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6);
+                ctx.fill();
+                ctx.restore();
+
+                // Vẽ QR image
+                ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+            }
+        }
+
+        // Nếu ở chế độ Double, vẽ đường nét đứt phân cách ở giữa để tiện cắt ảnh
+        if (isDoubleActive) {
+            ctx.save();
+            ctx.setLineDash([12, 10]);
+            ctx.strokeStyle = 'rgba(160, 160, 160, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(STRIP_WIDTH, 20);
+            ctx.lineTo(STRIP_WIDTH, STRIP_HEIGHT - 20);
+            ctx.stroke();
+            ctx.restore();
         }
 
         // Download JPG
         const dataURL = canvasFinal.toDataURL('image/jpeg', 0.95);
         const link = document.createElement('a');
-        link.download = `photobooth_${frame ? frame.id : 'photo'}_${Date.now()}.jpg`;
+        link.download = `photobooth_${frame ? frame.id : 'photo'}${isDoubleActive ? '_double' : ''}_${Date.now()}.jpg`;
         link.href = dataURL;
         link.click();
     } catch (err) {

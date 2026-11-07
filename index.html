@@ -128,23 +128,36 @@
             </div>
 
             <!-- Thanh công cụ bên dưới -->
-            <div class="p-6 bg-white/70 backdrop-blur-md border-t border-white/60 shrink-0 flex flex-col gap-4 z-20">
-                <div class="flex justify-between items-center text-xs text-gray-600 font-medium">
-                    <div class="flex items-center gap-2">
+            <div class="p-4 sm:p-6 bg-white/75 backdrop-blur-md border-t border-white/60 shrink-0 flex flex-col gap-3 sm:gap-4 z-20">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-2.5 text-xs text-gray-600 font-medium">
+                    <!-- Nhóm nút tính năng: QR & Double (co giãn linh hoạt trên mobile) -->
+                    <div class="flex items-center flex-wrap gap-2 w-full sm:w-auto justify-center sm:justify-start">
                         <!-- Nút Bật / Tắt Mã QR -->
-                        <button id="btn-toggle-qr" type="button" class="btn-qr-toggle">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button id="btn-toggle-qr" type="button" class="btn-action-toggle">
+                            <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
                             </svg>
-                            <span id="qr-status-text">Chèn Mã QR</span>
-                            <span class="qr-status-indicator"></span>
+                            <span id="qr-status-text">Chèn QR</span>
+                            <span class="action-status-indicator"></span>
+                        </button>
+
+                        <!-- Nút Bật / Tắt Bản Đôi (Double Strip) -->
+                        <button id="btn-toggle-double" type="button" class="btn-action-toggle">
+                            <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                            </svg>
+                            <span id="double-status-text">Bản Đôi (x2)</span>
+                            <span class="action-status-indicator"></span>
                         </button>
                     </div>
 
-                    <span class="text-xs text-gray-500 font-medium">* Vuốt ngang dải ảnh để đổi khung template</span>
+                    <!-- Hướng dẫn đổi khung -->
+                    <div class="text-[11px] sm:text-xs text-gray-500 font-medium text-center sm:text-right shrink-0">
+                        <span>* Vuốt ngang dải ảnh để đổi khung</span>
+                    </div>
                 </div>
                 
-                <button id="btn-download" class="btn-flat w-full py-4 bg-gradient-to-r from-[#166534] to-[#15803d] text-white rounded-2xl font-bold flex justify-center items-center text-lg shadow-xl shadow-green-900/20 hover:scale-[1.02] transition-transform">
+                <button id="btn-download" class="btn-flat w-full py-3.5 sm:py-4 bg-gradient-to-r from-[#166534] to-[#15803d] text-white rounded-xl sm:rounded-2xl font-bold flex justify-center items-center text-base sm:text-lg shadow-xl shadow-green-900/20 hover:scale-[1.02] transition-transform">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     Tải Về Máy
                 </button>
