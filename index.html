@@ -20,7 +20,9 @@
             <!-- CỘT TRÁI: CAMERA (Cố định ở trên trên điện thoại để luôn nhìn thấy camera khi chụp) -->
             <div class="w-full md:w-7/12 p-3 sm:p-4 md:p-8 border-b md:border-b-0 md:border-r border-white/50 bg-white/30 flex flex-col shrink-0">
                 <div class="flex justify-between items-center mb-2 md:mb-6">
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight">Photobooth<span class="text-[#b91c1c]">.</span></h1>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight flex items-center select-none">
+                        <span>photo</span><span id="dynamic-title-suffix" class="text-[#b91c1c]">booth</span><span id="dynamic-title-icon" class="title-icon-badge text-base md:text-lg">📸</span><span class="typewriter-cursor">|</span>
+                    </h1>
                     <div class="flex gap-2">
                         <button id="btn-reset" class="hidden text-xs font-semibold px-2.5 py-1 bg-red-100/80 text-red-600 hover:bg-red-200 shadow-sm rounded-full backdrop-blur-md transition-colors">Xóa làm lại</button>
                         <span class="text-xs font-semibold px-2.5 py-1 bg-white/70 shadow-sm text-gray-800 rounded-full backdrop-blur-md"><span id="photo-count">0</span>/4 Ảnh</span>

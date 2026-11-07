@@ -113,17 +113,94 @@ async function initCamera() {
         document.getElementById('cam-error').classList.remove('hidden');
     }
 }
-window.addEventListener('load', initCamera);
+window.addEventListener('load', () => {
+    initCamera();
+    initDynamicTitle();
+});
+
+// --- DYNAMIC TYPEWRITER TITLE EFFECT ---
+function initDynamicTitle() {
+    const suffixEl = document.getElementById('dynamic-title-suffix');
+    const iconEl = document.getElementById('dynamic-title-icon');
+    if (!suffixEl || !iconEl) return;
+
+    const wordList = [
+        { text: 'Gay', icon: '🌈' },
+        { text: 'Lesbian', icon: '🌈' },
+        { text: 'Straight', icon: '✨' },
+        { text: 'Capybara', icon: '🍊' },
+        { text: 'Cutie', icon: '🎀' },
+        { text: 'Legend', icon: '👑' },
+        { text: 'Slay', icon: '💅' },
+        { text: 'Champ', icon: '🏆' },
+        { text: 'Booth', icon: '📸' },
+        { text: 'Angel', icon: '👼' },
+    ];
+
+    let currentWordIndex = 0; // Bắt đầu bằng 'booth'
+    let currentText = 'booth';
+
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    async function runTypewriterLoop() {
+        while (true) {
+            // Cứ sau khoảng 5s thì kích hoạt hiệu ứng xóa và đổi từ
+            await delay(5000);
+
+            // Hiệu ứng xóa lùi từng chữ một như phím backspace
+            while (currentText.length > 0) {
+                currentText = currentText.slice(0, -1);
+                suffixEl.textContent = currentText;
+                if (iconEl && currentText.length === 0) {
+                    iconEl.style.opacity = '0';
+                    iconEl.style.transform = 'scale(0.5)';
+                }
+                await delay(75);
+            }
+
+            // Nghỉ ngắn khi xóa hết chữ
+            await delay(250);
+
+            // Chọn ngẫu nhiên một từ trong danh sách (khác từ hiện tại)
+            let nextIndex;
+            do {
+                nextIndex = Math.floor(Math.random() * wordList.length);
+            } while (nextIndex === currentWordIndex && wordList.length > 1);
+
+            currentWordIndex = nextIndex;
+            const target = wordList[currentWordIndex];
+
+            // Hiệu ứng gõ từng ký tự mới vào
+            for (let i = 0; i < target.text.length; i++) {
+                currentText += target.text[i];
+                suffixEl.textContent = currentText;
+                await delay(110);
+            }
+
+            // Cập nhật và hiện icon tương ứng với hiệu ứng nảy nhẹ
+            if (iconEl) {
+                iconEl.textContent = target.icon;
+                iconEl.style.opacity = '1';
+                iconEl.style.transform = 'scale(1.35)';
+                setTimeout(() => {
+                    iconEl.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+    }
+
+    runTypewriterLoop();
+}
 
 // --- FILTERS & EFFECTS CONTROLS ---
-window.setFilter = function(val, btn) {
+window.setFilter = function (val, btn) {
     currentFilter = val;
     video.style.filter = val;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 };
 
-window.setEffect = function(val, btn) {
+window.setEffect = function (val, btn) {
     currentEffect = val;
     effectOverlay.className = 'effect-overlay ' + (val !== 'none' ? `effect-${val}` : '');
     document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
@@ -268,7 +345,7 @@ document.getElementById('btn-manual').addEventListener('click', () => {
 });
 
 // Auto 4-Shots Button
-document.getElementById('btn-auto').addEventListener('click', async function() {
+document.getElementById('btn-auto').addEventListener('click', async function () {
     if (isCapturing) return;
     if (photos.length >= 4) {
         showRetakeModal();
@@ -522,7 +599,7 @@ function roundRect(ctx, x, y, width, height, radius) {
 }
 
 // --- EXPORT FINAL IMAGE ---
-document.getElementById('btn-download').addEventListener('click', async function() {
+document.getElementById('btn-download').addEventListener('click', async function () {
     const originalHTML = this.innerHTML;
     this.innerHTML = `
         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

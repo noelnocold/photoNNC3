@@ -234,3 +234,23 @@ body {
 .control-panel-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(185, 28, 28, 0.6);
 }
+
+/* Blinking Typewriter Cursor & Title Icon */
+.typewriter-cursor {
+    display: inline-block;
+    color: #b91c1c;
+    font-weight: 300;
+    margin-left: 1px;
+    animation: cursorBlink 0.9s infinite;
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.title-icon-badge {
+    display: inline-block;
+    margin-left: 4px;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+}
