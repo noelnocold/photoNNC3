@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,62 +8,94 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="min-h-screen p-0 sm:p-2 md:py-8 md:px-4 flex flex-col items-center justify-center relative">
 
     <!-- Container Chính (Trên điện thoại h-[100dvh] cố định, trên PC md:h-auto ôm theo nội dung) -->
-    <div class="max-w-5xl w-full bg-white/50 backdrop-blur-2xl border border-white/60 md:rounded-[2.5rem] overflow-hidden flex flex-col relative h-[100dvh] md:h-auto shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] my-auto">
-        
+    <div
+        class="max-w-5xl w-full bg-white/50 backdrop-blur-2xl border border-white/60 md:rounded-[2.5rem] overflow-hidden flex flex-col relative h-[100dvh] md:h-auto shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] my-auto">
+
         <!-- ============================================== -->
         <!-- VIEW 1: MÀN HÌNH CHỤP (CAMERA & CONTROLS)      -->
         <!-- ============================================== -->
         <div id="capture-view" class="flex flex-col md:flex-row w-full h-full md:h-auto overflow-hidden">
-            
+
             <!-- CỘT TRÁI: CAMERA (Cố định ở trên trên điện thoại để luôn nhìn thấy camera khi chụp) -->
-            <div class="w-full md:w-7/12 p-3 sm:p-4 md:p-8 border-b md:border-b-0 md:border-r border-white/50 bg-white/30 flex flex-col shrink-0">
+            <div
+                class="w-full md:w-7/12 p-3 sm:p-4 md:p-8 border-b md:border-b-0 md:border-r border-white/50 bg-white/30 flex flex-col shrink-0">
                 <div class="flex justify-between items-center mb-2 md:mb-6">
                     <h1 class="text-xl md:text-2xl font-bold tracking-tight flex items-center select-none">
-                        <span>photo</span><span id="dynamic-title-suffix" class="text-[#b91c1c]">booth</span><span id="dynamic-title-icon" class="title-icon-badge text-base md:text-lg">📸</span><span class="typewriter-cursor">|</span>
+                        <span>photo</span><span id="dynamic-title-suffix" class="text-[#b91c1c]">booth</span><span
+                            id="dynamic-title-icon" class="title-icon-badge text-base md:text-lg">📸</span><span
+                            class="typewriter-cursor">|</span>
                     </h1>
                     <div class="flex gap-2">
-                        <button id="btn-reset" class="hidden text-xs font-semibold px-2.5 py-1 bg-red-100/80 text-red-600 hover:bg-red-200 shadow-sm rounded-full backdrop-blur-md transition-colors">Xóa làm lại</button>
-                        <span class="text-xs font-semibold px-2.5 py-1 bg-white/70 shadow-sm text-gray-800 rounded-full backdrop-blur-md"><span id="photo-count">0</span>/4 Ảnh</span>
+                        <button id="btn-reset"
+                            class="hidden text-xs font-semibold px-2.5 py-1 bg-red-100/80 text-red-600 hover:bg-red-200 shadow-sm rounded-full backdrop-blur-md transition-colors">Xóa
+                            làm lại</button>
+                        <span
+                            class="text-xs font-semibold px-2.5 py-1 bg-white/70 shadow-sm text-gray-800 rounded-full backdrop-blur-md"><span
+                                id="photo-count">0</span>/4 Ảnh</span>
                     </div>
                 </div>
 
                 <!-- Khu vực Camera (Giới hạn chiều cao trên mobile để không chiếm hết màn hình) -->
-                <div class="video-container rounded-2xl md:rounded-3xl border-2 md:border-4 border-white/70 shadow-lg mb-2 md:mb-6 group relative overflow-hidden max-h-[30vh] sm:max-h-[35vh] md:max-h-none mx-auto w-full">
+                <div
+                    class="video-container rounded-2xl md:rounded-3xl border-2 md:border-4 border-white/70 shadow-lg mb-2 md:mb-6 group relative overflow-hidden max-h-[30vh] sm:max-h-[35vh] md:max-h-none mx-auto w-full">
                     <video id="video" autoplay playsinline></video>
                     <div id="effect-overlay" class="effect-overlay"></div>
                     <div id="flash"></div>
-                    <div id="countdown-text" class="absolute inset-0 flex items-center justify-center text-7xl font-bold text-white hidden z-20">3</div>
-                    
-                    <div id="cam-error" class="absolute inset-0 bg-[#2c2a29] flex items-center justify-center text-[#f4f1ea] hidden flex-col p-4 text-center">
-                        <svg class="w-10 h-10 mb-2 text-[#b91c1c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <div id="countdown-text"
+                        class="absolute inset-0 flex items-center justify-center text-7xl font-bold text-white hidden z-20">
+                        3</div>
+
+                    <div id="cam-error"
+                        class="absolute inset-0 bg-[#2c2a29] flex items-center justify-center text-[#f4f1ea] hidden flex-col p-4 text-center">
+                        <svg class="w-10 h-10 mb-2 text-[#b91c1c]" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
                         <span class="text-sm">Chưa có quyền truy cập Camera</span>
                     </div>
                 </div>
-                
+
                 <!-- Thumbnails (Gọn gàng trên mobile) -->
                 <div class="grid grid-cols-4 gap-2 md:gap-3 h-14 md:h-24 shrink-0" id="thumbnails">
-                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full"></div>
-                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full"></div>
-                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full"></div>
-                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full"></div>
+                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full">
+                    </div>
+                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full">
+                    </div>
+                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full">
+                    </div>
+                    <div class="bg-white/50 rounded-lg md:rounded-xl border border-white/60 shadow-sm w-full h-full">
+                    </div>
                 </div>
             </div>
 
             <!-- CỘT PHẢI: BẢNG ĐIỀU KHIỂN (Trên mobile: có kích thước xác định & cuộn overflow-y-auto tự do trong khi vẫn thấy camera phía trên) -->
-            <div class="w-full md:w-5/12 p-4 md:p-8 flex flex-col bg-white/40 flex-1 min-h-0 overflow-y-auto control-panel-scroll">
-                
+            <div
+                class="w-full md:w-5/12 p-4 md:p-8 flex flex-col bg-white/40 flex-1 min-h-0 overflow-y-auto control-panel-scroll">
+
                 <!-- BỘ LỌC MÀU -->
                 <div class="mb-6 md:mb-8">
                     <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 md:mb-4">1. Bộ lọc màu</h3>
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-3">
-                        <button onclick="setFilter('none', this)" class="filter-btn btn-outline active py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Gốc</button>
-                        <button onclick="setFilter('grayscale(100%)', this)" class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Đen Trắng</button>
-                        <button onclick="setFilter('sepia(80%)', this)" class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Cổ điển</button>
-                        <button onclick="setFilter('contrast(1.15) brightness(1.05)', this)" class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Sáng Rõ</button>
-                        <button onclick="setFilter('saturate(1.4) hue-rotate(-5deg)', this)" class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Rực rỡ</button>
+                        <button onclick="setFilter('none', this)"
+                            class="filter-btn btn-outline active py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Gốc</button>
+                        <button onclick="setFilter('grayscale(100%)', this)"
+                            class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Đen
+                            Trắng</button>
+                        <button onclick="setFilter('sepia(80%)', this)"
+                            class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Cổ
+                            điển</button>
+                        <button onclick="setFilter('contrast(1.15) brightness(1.05)', this)"
+                            class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Sáng
+                            Rõ</button>
+                        <button onclick="setFilter('saturate(1.4) hue-rotate(-5deg)', this)"
+                            class="filter-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Rực
+                            rỡ</button>
                     </div>
                 </div>
 
@@ -70,22 +103,38 @@
                 <div class="mb-6 md:mb-10">
                     <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 md:mb-4">2. Hiệu ứng</h3>
                     <div class="grid grid-cols-2 gap-2.5 md:gap-3">
-                        <button onclick="setEffect('none', this)" class="effect-btn btn-outline active py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Không</button>
-                        <button onclick="setEffect('grain', this)" class="effect-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Hạt phim</button>
-                        <button onclick="setEffect('vignette', this)" class="effect-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Viền tối</button>
-                        <button onclick="setEffect('lightleak', this)" class="effect-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Vệt sáng</button>
+                        <button onclick="setEffect('none', this)"
+                            class="effect-btn btn-outline active py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Không</button>
+                        <button onclick="setEffect('grain', this)"
+                            class="effect-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Hạt
+                            phim</button>
+                        <button onclick="setEffect('vignette', this)"
+                            class="effect-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Viền
+                            tối</button>
+                        <button onclick="setEffect('lightleak', this)"
+                            class="effect-btn btn-outline py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold shadow-sm hover:shadow-md transition-shadow">Vệt
+                            sáng</button>
                     </div>
                 </div>
 
                 <!-- NÚT CHỤP -->
                 <div class="mt-auto space-y-3 md:space-y-4 pt-3 md:pt-4 shrink-0">
-                    <button id="btn-manual" class="btn-flat w-full py-3.5 md:py-4 bg-[#2c2a29]/90 backdrop-blur-md text-white rounded-xl md:rounded-2xl font-semibold flex justify-center items-center shadow-lg hover:bg-black transition-colors text-sm md:text-base">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                    <button id="btn-manual"
+                        class="btn-flat w-full py-3.5 md:py-4 bg-[#2c2a29]/90 backdrop-blur-md text-white rounded-xl md:rounded-2xl font-semibold flex justify-center items-center shadow-lg hover:bg-black transition-colors text-sm md:text-base">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                            </path>
+                        </svg>
                         Chụp Thủ Công (1 Tấm)
                     </button>
-                    
-                    <button id="btn-auto" class="btn-flat w-full py-3.5 md:py-4 bg-gradient-to-r from-[#b91c1c] to-[#dc2626] text-white rounded-xl md:rounded-2xl font-bold flex justify-center items-center text-base md:text-lg shadow-xl shadow-red-900/20 hover:scale-[1.02] transition-transform">
-                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
+                    <button id="btn-auto"
+                        class="btn-flat w-full py-3.5 md:py-4 bg-gradient-to-r from-[#b91c1c] to-[#dc2626] text-white rounded-xl md:rounded-2xl font-bold flex justify-center items-center text-base md:text-lg shadow-xl shadow-red-900/20 hover:scale-[1.02] transition-transform">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                         Tự Động Chụp (4 Tấm)
                     </button>
                 </div>
@@ -96,20 +145,27 @@
         <!-- VIEW 2: MÀN HÌNH KẾT QUẢ & CAROUSEL KHUNG      -->
         <!-- (Dùng h-auto trong luồng hiển thị bình thường) -->
         <!-- ============================================== -->
-        <div id="result-view" class="hidden flex-col w-full h-full md:h-auto bg-white/90 backdrop-blur-3xl overflow-y-auto md:overflow-hidden md:rounded-[2.5rem]">
-            
+        <div id="result-view"
+            class="hidden flex-col w-full h-full md:h-auto bg-white/90 backdrop-blur-3xl overflow-y-auto md:overflow-hidden md:rounded-[2.5rem]">
+
             <!-- Header Result -->
-            <div class="p-5 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-white/60 shrink-0 z-20">
-                <button id="btn-back-capture" class="p-2 bg-white/80 rounded-full shadow-sm text-gray-600 hover:text-black hover:bg-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <div
+                class="p-5 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-white/60 shrink-0 z-20">
+                <button id="btn-back-capture"
+                    class="p-2 bg-white/80 rounded-full shadow-sm text-gray-600 hover:text-black hover:bg-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
                 </button>
                 <h2 class="text-sm font-bold uppercase tracking-widest text-[#2c2a29]">Chọn Khung Ảnh</h2>
                 <div class="w-10"></div>
             </div>
 
             <!-- Carousel Vuốt Chọn Khung (Kèm Dynamic Blurred Background) -->
-            <div class="w-full relative overflow-hidden flex flex-col justify-center py-6 min-h-[560px] md:min-h-[600px]">
-                
+            <div
+                class="w-full relative overflow-hidden flex flex-col justify-center py-6 min-h-[560px] md:min-h-[600px]">
+
                 <!-- Background mờ ảo với hiệu ứng mở rộng từ tâm -->
                 <div class="carousel-bg-container">
                     <div id="carousel-bg-layer-back" class="carousel-bg-layer bg-layer-back"></div>
@@ -117,7 +173,8 @@
                 </div>
 
                 <!-- Dải ảnh cuộn ngang -->
-                <div id="frame-carousel" class="flex overflow-x-auto snap-x hide-scrollbar w-full items-center relative z-10 py-2">
+                <div id="frame-carousel"
+                    class="flex overflow-x-auto snap-x hide-scrollbar w-full items-center relative z-10 py-2">
                     <!-- Các slide khung ảnh sẽ được JS tạo ra ở đây -->
                 </div>
 
@@ -128,14 +185,18 @@
             </div>
 
             <!-- Thanh công cụ bên dưới -->
-            <div class="p-4 sm:p-6 bg-white/75 backdrop-blur-md border-t border-white/60 shrink-0 flex flex-col gap-3 sm:gap-4 z-20">
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-2.5 text-xs text-gray-600 font-medium">
+            <div
+                class="p-4 sm:p-6 bg-white/75 backdrop-blur-md border-t border-white/60 shrink-0 flex flex-col gap-3 sm:gap-4 z-20">
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-center gap-2.5 text-xs text-gray-600 font-medium">
                     <!-- Nhóm nút tính năng: QR & Double (co giãn linh hoạt trên mobile) -->
                     <div class="flex items-center flex-wrap gap-2 w-full sm:w-auto justify-center sm:justify-start">
                         <!-- Nút Bật / Tắt Mã QR -->
                         <button id="btn-toggle-qr" type="button" class="btn-action-toggle">
                             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
+                                </path>
                             </svg>
                             <span id="qr-status-text">Chèn QR</span>
                             <span class="action-status-indicator"></span>
@@ -144,7 +205,9 @@
                         <!-- Nút Bật / Tắt Bản Đôi (Double Strip) -->
                         <button id="btn-toggle-double" type="button" class="btn-action-toggle">
                             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2">
+                                </path>
                             </svg>
                             <span id="double-status-text">Bản Đôi (x2)</span>
                             <span class="action-status-indicator"></span>
@@ -156,27 +219,42 @@
                         <span>* Vuốt ngang dải ảnh để đổi khung</span>
                     </div>
                 </div>
-                
-                <button id="btn-download" class="btn-flat w-full py-3.5 sm:py-4 bg-gradient-to-r from-[#166534] to-[#15803d] text-white rounded-xl sm:rounded-2xl font-bold flex justify-center items-center text-base sm:text-lg shadow-xl shadow-green-900/20 hover:scale-[1.02] transition-transform">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+
+                <button id="btn-download"
+                    class="btn-flat w-full py-3.5 sm:py-4 bg-gradient-to-r from-[#166534] to-[#15803d] text-white rounded-xl sm:rounded-2xl font-bold flex justify-center items-center text-base sm:text-lg shadow-xl shadow-green-900/20 hover:scale-[1.02] transition-transform">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
                     Tải Về Máy
                 </button>
             </div>
-            
+
         </div>
     </div>
 
     <!-- POP-UP XÁC NHẬN CHỤP LẠI (Glassmorphism) -->
-    <div id="retake-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/30 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white/80 backdrop-blur-2xl border border-white/50 p-6 md:p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center flex flex-col items-center transform scale-95 transition-transform duration-300" id="retake-modal-content">
-            <div class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-5 shadow-inner">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+    <div id="retake-modal"
+        class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/30 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white/80 backdrop-blur-2xl border border-white/50 p-6 md:p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center flex flex-col items-center transform scale-95 transition-transform duration-300"
+            id="retake-modal-content">
+            <div
+                class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-5 shadow-inner">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                    </path>
+                </svg>
             </div>
             <h3 class="text-xl font-bold text-gray-900 mb-2">Chụp lại từ đầu?</h3>
-            <p class="text-sm text-gray-600 mb-8 font-medium">Bạn đã chụp đủ 4 tấm. Bạn có muốn xóa toàn bộ ảnh hiện tại và bắt đầu lại không?</p>
+            <p class="text-sm text-gray-600 mb-8 font-medium">Bạn đã chụp đủ 4 tấm. Bạn có muốn xóa toàn bộ ảnh hiện tại
+                và bắt đầu lại không?</p>
             <div class="flex gap-3 w-full">
-                <button id="btn-cancel-retake" class="flex-1 py-3.5 rounded-2xl bg-white/50 border border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-colors">Hủy</button>
-                <button id="btn-confirm-retake" class="flex-1 py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg shadow-red-600/30 transition-all">Xóa & Chụp lại</button>
+                <button id="btn-cancel-retake"
+                    class="flex-1 py-3.5 rounded-2xl bg-white/50 border border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-colors">Hủy</button>
+                <button id="btn-confirm-retake"
+                    class="flex-1 py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg shadow-red-600/30 transition-all">Xóa
+                    & Chụp lại</button>
             </div>
         </div>
     </div>
@@ -184,7 +262,21 @@
     <!-- Canvas ảo dùng để xuất ảnh -->
     <canvas id="canvas-final" class="hidden"></canvas>
 
+    <!-- BỘ ĐẾM LƯỢT TRUY CẬP -->
+    <div
+        class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-[90] bg-white/70 backdrop-blur-md border border-white/60 shadow-lg px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+            </path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+            </path>
+        </svg>
+        Truy cập: <span id="visit-count" class="text-[#b91c1c]">...</span>
+    </div>
+
     <!-- Script Ứng Dụng -->
     <script src="app.js"></script>
 </body>
+
 </html>

@@ -95,7 +95,7 @@ async function initCamera() {
         });
         video.srcObject = stream;
         // Gọi play() tường minh để camera hiển thị ngay, không chờ autoplay browser
-        video.play().catch(() => {});
+        video.play().catch(() => { });
         document.getElementById('cam-error').classList.add('hidden');
     } catch (err) {
         console.error('Camera access error:', err);
@@ -108,6 +108,7 @@ async function initCamera() {
 document.addEventListener('DOMContentLoaded', () => {
     initCamera();
     initDynamicTitle();
+    initVisitCounter();
 });
 
 
@@ -742,3 +743,26 @@ document.getElementById('btn-download').addEventListener('click', async function
         this.disabled = false;
     }
 });
+
+// --- VISIT COUNTER API ---
+async function initVisitCounter() {
+    const countSpan = document.getElementById('visit-count');
+    if (!countSpan) return;
+
+    try {
+        // Thay thế 'hoang-photobooth-official-01' bằng tên dự án thực tế của bạn
+        const uniqueKey = 'noelnocold-photobooth-v1';
+
+        // Gọi API để đếm lượt truy cập (Count API)
+        const response = await fetch(`https://countapi.mileshilliard.com/api/v1/hit/${uniqueKey}`);
+        const data = await response.json();
+
+        if (data.value) {
+            const count = parseInt(data.value, 10);
+            countSpan.innerText = count.toLocaleString('vi-VN');
+        }
+    } catch (err) {
+        console.error('Lỗi bộ đếm:', err);
+        countSpan.innerText = '-';
+    }
+}
