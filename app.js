@@ -62,8 +62,10 @@ const assetImageCache = {};
 function loadTemplatesFromAsset() {
     // Danh sách file template với 2 màu pastel mã hóa trong tên
     const templateFiles = [
-        'asset/template_1_fca5a5_fecaca.png',  // Template 1: 2 tone đỏ pastel
-        'asset/template_2_bbf7d0_6ee7b7.png',  // Template 2: 2 tone xanh lá pastel
+        'asset/template_1_fca5a5_fecaca.png',
+        'asset/template_2_bbf7d0_6ee7b7.png',
+        'asset/template_3_fcefdc_fff7d9.png',
+        'asset/template_4_bbf7d0_6ee7b7.png',
     ];
 
     frameData = templateFiles.map((src, idx) => {
@@ -697,11 +699,10 @@ document.getElementById('btn-download').addEventListener('click', async function
             // Vẽ mã QR ở góc dưới cùng bên phải sát cạnh nếu được bật
             if (isQrActive && qrImg) {
                 const qrSize = 85;
-                const qrMargin = 12; // Sát mép phải và mép dưới
+                const qrMargin = 12;
                 const qrX = offsetX + STRIP_WIDTH - qrSize - qrMargin;
                 const qrY = STRIP_HEIGHT - qrSize - qrMargin;
 
-                // Card nền trắng viền bo nhẹ tạo độ tương phản cao cho QR
                 ctx.save();
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
                 ctx.shadowBlur = 6;
@@ -712,12 +713,11 @@ document.getElementById('btn-download').addEventListener('click', async function
                 ctx.fill();
                 ctx.restore();
 
-                // Vẽ QR image
                 ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
             }
         }
 
-        // Nếu ở chế độ Double, vẽ đường nét đứt phân cách ở giữa để tiện cắt ảnh
+        // Đường nét đứt phân cách ở giữa khi bật Double Strip
         if (isDoubleActive) {
             ctx.save();
             ctx.setLineDash([12, 10]);
@@ -730,14 +730,47 @@ document.getElementById('btn-download').addEventListener('click', async function
             ctx.restore();
         }
 
-        // Download JPG
-        const dataURL = canvasFinal.toDataURL('image/jpeg', 0.95);
+        // =========================================================
+        // XỬ LÝ TẢI VỀ TƯƠNG THÍCH TRÊN CẢ IOS (IPHONE) VÀ ANDROID
+        // =========================================================
+        const fileName = `photobooth_${frame ? frame.id : 'photo'}${isDoubleActive ? '_double' : ''}_${Date.now()}.jpg`;
+
+        // 1. Chuyển Canvas sang dạng Blob binary thay vì DataURL
+        const blob = await new Promise(resolve => canvasFinal.toBlob(resolve, 'image/jpeg', 0.95));
+        if (!blob) throw new Error('Không thể tạo file ảnh.');
+
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+        // 2. Kiểm tra nếu thiết bị hỗ trợ Web Share API (Safari iOS 15+)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Photobooth Image',
+                    text: 'Ảnh chụp từ Photobooth'
+                });
+                return; // Chia sẻ/Lưu thành công qua iOS Native Sheet
+            } catch (err) {
+                // Người dùng bấm "Hủy" thao tác chia sẻ
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        // 3. Phương án fallback cho Desktop / Android / Safari cũ
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = `photobooth_${frame ? frame.id : 'photo'}${isDoubleActive ? '_double' : ''}_${Date.now()}.jpg`;
-        link.href = dataURL;
+        link.download = fileName;
+        link.href = blobUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+
+        // Giải phóng bộ nhớ Blob URL sau khi tải
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
     } catch (err) {
         console.error('Download error:', err);
+        alert('Không thể tải ảnh tự động. Bạn có thể nhấn giữ vào hình ảnh preview để chọn "Lưu ảnh".');
     } finally {
         this.innerHTML = originalHTML;
         this.disabled = false;
