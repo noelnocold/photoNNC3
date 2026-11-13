@@ -63,9 +63,11 @@ function loadTemplatesFromAsset() {
     // Danh sách file template với 2 màu pastel mã hóa trong tên
     const templateFiles = [
         'asset/template_1_fca5a5_fecaca.png',
-        'asset/template_2_bbf7d0_6ee7b7.png',
-        'asset/template_3_fcefdc_fff7d9.png',
+        'asset/template_2_fca5a5_fecaca.png',
+        'asset/template_3_bbf7d0_6ee7b7.png',
         'asset/template_4_bbf7d0_6ee7b7.png',
+        'asset/template_5_fcefdc_fff7d9.png',
+        'asset/template_6_fcefdc_fff7d9.png'
     ];
 
     frameData = templateFiles.map((src, idx) => {
