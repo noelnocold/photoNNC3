@@ -29,12 +29,19 @@ const retakeModalContent = document.getElementById('retake-modal-content');
 const btnConfirmRetake = document.getElementById('btn-confirm-retake');
 const btnCancelRetake = document.getElementById('btn-cancel-retake');
 
+// Flash Toggle Elements
+const btnFlashToggle = document.getElementById('btn-flash-toggle');
+const flashIconOff = document.getElementById('flash-icon-off');
+const flashIconOn = document.getElementById('flash-icon-on');
+const screenFlashOverlay = document.getElementById('screen-flash-overlay');
+
 // --- STATE MANAGEMENT ---
 let stream = null;
 let photos = [];
 let currentFilter = 'none';
 let currentEffect = 'none';
 let isCapturing = false;
+let isFlashOn = false;
 
 // QR Code & Double Strip State
 let isQrActive = false;
@@ -299,10 +306,41 @@ function captureVideoFrame() {
 }
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
+
+// Flash trắng nhỏ trong khung camera (hiệu ứng chớp UI)
 const triggerFlash = () => {
     flash.classList.add('flash-active');
     setTimeout(() => flash.classList.remove('flash-active'), 100);
 };
+
+// Flash toàn màn hình cho camera trước (giả lập đèn flash)
+const triggerScreenFlash = () => new Promise(resolve => {
+    if (!isFlashOn) { resolve(); return; }          // Nếu tắt flash → bỏ qua ngay
+    screenFlashOverlay.style.transition = 'none';   // Tắt transition khi bật (tức thì)
+    screenFlashOverlay.style.opacity = '1';          // Màn hình trắng hoàn toàn
+    // Giữ màn hình trắng 220ms để camera kịp nhận sáng
+    setTimeout(() => {
+        screenFlashOverlay.style.transition = 'opacity 0.35s ease-out'; // Fade-out mượt
+        screenFlashOverlay.style.opacity = '0';     // Tắt overlay
+        resolve();                                   // Tiếp tục chụp
+    }, 220);
+});
+
+// --- FLASH TOGGLE BUTTON ---
+btnFlashToggle.addEventListener('click', () => {
+    isFlashOn = !isFlashOn;        // Đảo trạng thái
+    if (isFlashOn) {
+        flashIconOff.classList.add('hidden');       // Ẩn icon outline
+        flashIconOn.classList.remove('hidden');     // Hiện icon solid vàng
+        btnFlashToggle.classList.add('flash-btn-on'); // Áp style CSS active
+        btnFlashToggle.title = 'Tắt Flash màn hình';
+    } else {
+        flashIconOff.classList.remove('hidden');    // Hiện lại icon outline
+        flashIconOn.classList.add('hidden');        // Ẩn icon solid
+        btnFlashToggle.classList.remove('flash-btn-on');
+        btnFlashToggle.title = 'Bật Flash màn hình';
+    }
+});
 
 // --- RETAKE MODAL POP-UP ---
 function showRetakeModal() {
@@ -331,13 +369,14 @@ btnConfirmRetake.addEventListener('click', () => {
 });
 
 // Manual Shot Button
-document.getElementById('btn-manual').addEventListener('click', () => {
+document.getElementById('btn-manual').addEventListener('click', async () => {
     if (isCapturing) return;
     if (photos.length >= 4) {
         showRetakeModal();
         return;
     }
-    triggerFlash();
+    await triggerScreenFlash(); // Bật flash màn hình (nếu isFlashOn)
+    triggerFlash();              // Chớp trắng UI trong khung camera
     photos.push(captureVideoFrame());
     updateThumbnails();
 });
@@ -364,7 +403,8 @@ document.getElementById('btn-auto').addEventListener('click', async function () 
         }
         countdownText.classList.add('hidden');
 
-        triggerFlash();
+        await triggerScreenFlash(); // Bật flash màn hình (nếu isFlashOn)
+        triggerFlash();              // Chớp trắng UI trong khung camera
         photos.push(captureVideoFrame());
         updateThumbnails();
         if (photos.length < 4) await wait(800);

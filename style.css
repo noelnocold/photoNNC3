@@ -32,6 +32,7 @@ body {
     transition: opacity 0.1s ease-out;
     z-index: 10;
 }
+
 .flash-active {
     opacity: 1 !important;
     transition: none !important;
@@ -45,11 +46,11 @@ body {
 }
 
 .effect-vignette {
-    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.7) 100%);
+    background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
 }
 
 .effect-lightleak {
-    background: linear-gradient(45deg, rgba(255,100,100,0.15) 0%, transparent 40%, rgba(255,200,100,0.1) 100%);
+    background: linear-gradient(45deg, rgba(255, 100, 100, 0.15) 0%, transparent 40%, rgba(255, 200, 100, 0.1) 100%);
     mix-blend-mode: screen;
 }
 
@@ -59,7 +60,7 @@ body {
 }
 
 #countdown-text {
-    text-shadow: 0px 4px 12px rgba(0,0,0,0.5);
+    text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 /* Flat & Glass Buttons */
@@ -67,15 +68,17 @@ body {
     border: 2px solid transparent;
     transition: all 0.2s ease;
 }
+
 .btn-flat:active {
     transform: scale(0.97);
 }
 
 .btn-outline {
-    border: 2px solid rgba(255,255,255,0.5);
-    background: rgba(255,255,255,0.6);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(4px);
 }
+
 .btn-outline.active {
     border-color: #b91c1c;
     background-color: rgba(253, 250, 246, 0.9);
@@ -85,13 +88,16 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
 .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
 .snap-x {
     scroll-snap-type: x mandatory;
 }
+
 .snap-center {
     scroll-snap-align: center;
 }
@@ -119,7 +125,8 @@ body {
 .carousel-bg-layer::after {
     content: '';
     position: absolute;
-    inset: -80px; /* Lớn hơn để blur mờ đều, không bị cắt mép cứng */
+    inset: -80px;
+    /* Lớn hơn để blur mờ đều, không bị cắt mép cứng */
     background: inherit;
     filter: blur(60px) saturate(1.2);
 }
@@ -134,7 +141,8 @@ body {
 }
 
 /* Action Toggle Buttons (QR & Double) */
-.btn-action-toggle, .btn-qr-toggle {
+.btn-action-toggle,
+.btn-qr-toggle {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -152,18 +160,21 @@ body {
     user-select: none;
 }
 
-.btn-action-toggle:hover, .btn-qr-toggle:hover {
+.btn-action-toggle:hover,
+.btn-qr-toggle:hover {
     background: rgba(22, 101, 52, 0.12);
 }
 
-.btn-action-toggle.active, .btn-qr-toggle.active {
+.btn-action-toggle.active,
+.btn-qr-toggle.active {
     background: #166534;
     color: #ffffff;
     border-color: #166534;
     box-shadow: 0 4px 12px rgba(22, 101, 52, 0.25);
 }
 
-.action-status-indicator, .qr-status-indicator {
+.action-status-indicator,
+.qr-status-indicator {
     display: inline-block;
     width: 7px;
     height: 7px;
@@ -235,12 +246,32 @@ body {
 }
 
 @keyframes cursorBlink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 .title-icon-badge {
     display: inline-block;
     margin-left: 4px;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+}
+
+/* Flash Toggle Button - Trạng thái BẬT */
+#btn-flash-toggle.flash-btn-on {
+    background-color: rgba(217, 119, 6, 0.75);
+    /* amber-600 với opacity */
+    border-color: rgba(252, 211, 77, 0.6);
+    /* amber-300 */
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#btn-flash-toggle.flash-btn-on:hover {
+    background-color: rgba(180, 83, 9, 0.85);
 }
