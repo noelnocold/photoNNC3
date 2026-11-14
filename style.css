@@ -22,6 +22,10 @@ body {
     transform: scaleX(-1);
 }
 
+#video.video-rear {
+    transform: scaleX(1);
+}
+
 /* Flash & Effects Overlay */
 #flash {
     position: absolute;

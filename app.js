@@ -29,7 +29,9 @@ const retakeModalContent = document.getElementById('retake-modal-content');
 const btnConfirmRetake = document.getElementById('btn-confirm-retake');
 const btnCancelRetake = document.getElementById('btn-cancel-retake');
 
-// Flash Toggle Elements
+// Camera & Flash Toggle Elements
+const btnSwitchCamera = document.getElementById('btn-switch-camera');
+const switchCameraIcon = document.getElementById('switch-camera-icon');
 const btnFlashToggle = document.getElementById('btn-flash-toggle');
 const flashIconOff = document.getElementById('flash-icon-off');
 const flashIconOn = document.getElementById('flash-icon-on');
@@ -40,6 +42,8 @@ let stream = null;
 let photos = [];
 let currentFilter = 'none';
 let currentEffect = 'none';
+let currentFacingMode = 'user';
+let isSwitchingCamera = false;
 let isCapturing = false;
 let isFlashOn = false;
 
@@ -49,12 +53,13 @@ let isDoubleActive = false;
 let qrImageObj = null;
 const QR_FILE_PATH = 'asset/qr.png';
 
-// Standard Dimensions
-const STRIP_WIDTH = 480;
-const STRIP_HEIGHT = 1480;
-const PHOTO_WIDTH = 400;
-const PHOTO_HEIGHT = 300;
-const GAP = 40;
+// Standard Dimensions (Option B: Siêu nét 2.5x Scale cho chuẩn in ấn và hiển thị sắc nét)
+const EXPORT_SCALE = 2.5;
+const STRIP_WIDTH = Math.round(480 * EXPORT_SCALE);   // 1200 px
+const STRIP_HEIGHT = Math.round(1480 * EXPORT_SCALE); // 3700 px
+const PHOTO_WIDTH = Math.round(400 * EXPORT_SCALE);   // 1000 px
+const PHOTO_HEIGHT = Math.round(300 * EXPORT_SCALE);  // 750 px
+const GAP = Math.round(40 * EXPORT_SCALE);            // 100 px
 
 // Frames: DUY NHẤT LẤY TỪ THƯ MỤC asset VỚI TIỀN TỐ template
 let frameData = [];
@@ -97,13 +102,46 @@ function loadTemplatesFromAsset() {
 }
 loadTemplatesFromAsset();
 
+function updateFlashButtonTitle() {
+    if (!btnFlashToggle) return;
+    if (currentFacingMode === 'environment') {
+        btnFlashToggle.title = isFlashOn ? 'Tắt Đèn Flash' : 'Bật Đèn Flash';
+    } else {
+        btnFlashToggle.title = isFlashOn ? 'Tắt Flash màn hình' : 'Bật Flash màn hình';
+    }
+}
+
 // --- INITIALIZE CAMERA ---
-async function initCamera() {
+async function initCamera(facingMode = currentFacingMode) {
     try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: false
-        });
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+
+        const baseConstraints = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { ...baseConstraints, facingMode: { exact: facingMode } },
+                audio: false
+            });
+        } catch (exactErr) {
+            // Fallback cho thiết bị chỉ có 1 camera (PC/Laptop) hoặc không hỗ trợ exact
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { ...baseConstraints, facingMode },
+                audio: false
+            });
+        }
+
+        const activeTrack = stream.getVideoTracks()[0];
+        const actualFacing = activeTrack?.getSettings?.().facingMode;
+        currentFacingMode = (actualFacing === 'user' || actualFacing === 'environment')
+            ? actualFacing
+            : facingMode;
+
+        video.classList.toggle('video-rear', currentFacingMode === 'environment');
+        updateFlashButtonTitle();
+
         video.srcObject = stream;
         // Gọi play() tường minh để camera hiển thị ngay, không chờ autoplay browser
         video.play().catch(() => { });
@@ -220,7 +258,7 @@ function updateThumbnails() {
         if (photos[i]) {
             thumbnailsContainer.innerHTML += `
                 <div class="rounded-xl border-2 border-white/80 shadow-md w-full h-full relative overflow-hidden">
-                    <img src="${photos[i]}" class="w-full h-full object-cover transform scale-x-[-1]" />
+                    <img src="${photos[i]}" class="w-full h-full object-cover" />
                 </div>`;
         } else {
             thumbnailsContainer.innerHTML += `<div class="bg-white/50 rounded-xl border border-white/60 shadow-sm w-full h-full"></div>`;
@@ -245,10 +283,10 @@ function captureVideoFrame() {
     tempCanvas.width = PHOTO_WIDTH;
     tempCanvas.height = PHOTO_HEIGHT;
     const ctx = tempCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ctx.filter = currentFilter;
-    ctx.translate(PHOTO_WIDTH, 0);
-    ctx.scale(-1, 1);
 
     // Crop Center calculation
     const vW = video.videoWidth || 1280;
@@ -326,6 +364,66 @@ const triggerScreenFlash = () => new Promise(resolve => {
     }, 220);
 });
 
+// Bật/tắt đèn flash LED phần cứng cho camera sau (nếu trình duyệt & thiết bị hỗ trợ)
+async function setRearTorch(enabled) {
+    if (!stream) return false;
+    const track = stream.getVideoTracks()[0];
+    if (!track || typeof track.getCapabilities !== 'function') return false;
+    const caps = track.getCapabilities();
+    if (!caps || !caps.torch) return false;
+    try {
+        await track.applyConstraints({ advanced: [{ torch: enabled }] });
+        return true;
+    } catch (err) {
+        console.warn('Torch constraint failed:', err);
+        return false;
+    }
+}
+
+// Chụp ảnh kèm xử lý Flash phù hợp cho cả cam trước và cam sau
+async function captureWithFlash() {
+    let usedTorch = false;
+    if (isFlashOn) {
+        if (currentFacingMode === 'environment') {
+            usedTorch = await setRearTorch(true);
+            if (usedTorch) {
+                await wait(260); // Đợi đèn LED sáng và camera cân bằng sáng
+            } else {
+                // Fallback màn hình trắng nếu thiết bị (vd: iOS Safari) không hỗ trợ torch API
+                await triggerScreenFlash();
+            }
+        } else {
+            await triggerScreenFlash();
+        }
+    }
+
+    triggerFlash(); // Chớp trắng UI trong khung camera
+    const frameDataUrl = captureVideoFrame();
+
+    if (usedTorch) {
+        await setRearTorch(false);
+    }
+    return frameDataUrl;
+}
+
+// --- SWITCH CAMERA BUTTON ---
+if (btnSwitchCamera) {
+    btnSwitchCamera.addEventListener('click', async () => {
+        if (isCapturing || isSwitchingCamera) return;
+        isSwitchingCamera = true;
+        btnSwitchCamera.disabled = true;
+        if (switchCameraIcon) {
+            switchCameraIcon.classList.toggle('rotate-180');
+        }
+
+        const nextFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        await initCamera(nextFacingMode);
+
+        isSwitchingCamera = false;
+        btnSwitchCamera.disabled = false;
+    });
+}
+
 // --- FLASH TOGGLE BUTTON ---
 btnFlashToggle.addEventListener('click', () => {
     isFlashOn = !isFlashOn;        // Đảo trạng thái
@@ -333,13 +431,12 @@ btnFlashToggle.addEventListener('click', () => {
         flashIconOff.classList.add('hidden');       // Ẩn icon outline
         flashIconOn.classList.remove('hidden');     // Hiện icon solid vàng
         btnFlashToggle.classList.add('flash-btn-on'); // Áp style CSS active
-        btnFlashToggle.title = 'Tắt Flash màn hình';
     } else {
         flashIconOff.classList.remove('hidden');    // Hiện lại icon outline
         flashIconOn.classList.add('hidden');        // Ẩn icon solid
         btnFlashToggle.classList.remove('flash-btn-on');
-        btnFlashToggle.title = 'Bật Flash màn hình';
     }
+    updateFlashButtonTitle();
 });
 
 // --- RETAKE MODAL POP-UP ---
@@ -370,20 +467,18 @@ btnConfirmRetake.addEventListener('click', () => {
 
 // Manual Shot Button
 document.getElementById('btn-manual').addEventListener('click', async () => {
-    if (isCapturing) return;
+    if (isCapturing || isSwitchingCamera) return;
     if (photos.length >= 4) {
         showRetakeModal();
         return;
     }
-    await triggerScreenFlash(); // Bật flash màn hình (nếu isFlashOn)
-    triggerFlash();              // Chớp trắng UI trong khung camera
-    photos.push(captureVideoFrame());
+    photos.push(await captureWithFlash());
     updateThumbnails();
 });
 
 // Auto 4-Shots Button
 document.getElementById('btn-auto').addEventListener('click', async function () {
-    if (isCapturing) return;
+    if (isCapturing || isSwitchingCamera) return;
     if (photos.length >= 4) {
         showRetakeModal();
         return;
@@ -394,6 +489,7 @@ document.getElementById('btn-auto').addEventListener('click', async function () 
     this.innerHTML = "Đang chụp...";
     this.disabled = true;
     document.getElementById('btn-manual').disabled = true;
+    if (btnSwitchCamera) btnSwitchCamera.disabled = true;
 
     while (photos.length < 4) {
         countdownText.classList.remove('hidden');
@@ -403,15 +499,14 @@ document.getElementById('btn-auto').addEventListener('click', async function () 
         }
         countdownText.classList.add('hidden');
 
-        await triggerScreenFlash(); // Bật flash màn hình (nếu isFlashOn)
-        triggerFlash();              // Chớp trắng UI trong khung camera
-        photos.push(captureVideoFrame());
+        photos.push(await captureWithFlash());
         updateThumbnails();
         if (photos.length < 4) await wait(800);
     }
     isCapturing = false;
     this.disabled = false;
     document.getElementById('btn-manual').disabled = false;
+    if (btnSwitchCamera) btnSwitchCamera.disabled = false;
     this.innerHTML = originalHTML;
 });
 
@@ -538,7 +633,7 @@ function renderCarousel() {
                 <div class="absolute inset-0 bg-white"></div>
                 <!-- Khung chứa 4 ảnh -->
                 <div class="absolute inset-0 flex flex-col" style="padding: 8.333%; gap: 2.7%;">
-                    ${photos.map(p => `<img src="${p}" class="w-full aspect-[4/3] object-cover rounded-sm shadow-inner" style="transform: scaleX(-1);" />`).join('')}
+                    ${photos.map(p => `<img src="${p}" class="w-full aspect-[4/3] object-cover rounded-sm shadow-inner" />`).join('')}
                 </div>
                 <!-- Khung template từ thư mục asset -->
                 <img class="absolute inset-0 w-full h-full object-cover pointer-events-none z-10" src="${frame.src}" onerror="this.style.display='none'" />
@@ -684,6 +779,8 @@ document.getElementById('btn-download').addEventListener('click', async function
         canvasFinal.width = STRIP_WIDTH * totalStrips;
         canvasFinal.height = STRIP_HEIGHT;
         const ctx = canvasFinal.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         const frame = frameData[activeFrameIndex];
 
         // Nạp trước frame template
@@ -728,11 +825,7 @@ document.getElementById('btn-download').addEventListener('click', async function
             for (let i = 0; i < loadedPhotos.length; i++) {
                 const img = loadedPhotos[i];
                 const yPos = GAP + (i * (PHOTO_HEIGHT + GAP));
-                ctx.save();
-                ctx.translate(offsetX + GAP + PHOTO_WIDTH, yPos);
-                ctx.scale(-1, 1);
-                ctx.drawImage(img, 0, 0, PHOTO_WIDTH, PHOTO_HEIGHT);
-                ctx.restore();
+                ctx.drawImage(img, offsetX + GAP, yPos, PHOTO_WIDTH, PHOTO_HEIGHT);
             }
 
             // Vẽ khung template đè lên trên từ thư mục asset
@@ -740,18 +833,19 @@ document.getElementById('btn-download').addEventListener('click', async function
 
             // Vẽ mã QR ở góc dưới cùng bên phải sát cạnh nếu được bật
             if (isQrActive && qrImg) {
-                const qrSize = 85;
-                const qrMargin = 12;
+                const qrSize = Math.round(85 * EXPORT_SCALE);
+                const qrMargin = Math.round(12 * EXPORT_SCALE);
                 const qrX = offsetX + STRIP_WIDTH - qrSize - qrMargin;
                 const qrY = STRIP_HEIGHT - qrSize - qrMargin;
+                const qrPad = Math.round(4 * EXPORT_SCALE);
 
                 ctx.save();
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-                ctx.shadowBlur = 6;
+                ctx.shadowBlur = Math.round(6 * EXPORT_SCALE);
                 ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 2;
+                ctx.shadowOffsetY = Math.round(2 * EXPORT_SCALE);
                 ctx.fillStyle = '#ffffff';
-                roundRect(ctx, qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6);
+                roundRect(ctx, qrX - qrPad, qrY - qrPad, qrSize + (qrPad * 2), qrSize + (qrPad * 2), Math.round(6 * EXPORT_SCALE));
                 ctx.fill();
                 ctx.restore();
 
@@ -762,43 +856,48 @@ document.getElementById('btn-download').addEventListener('click', async function
         // Đường nét đứt phân cách ở giữa khi bật Double Strip
         if (isDoubleActive) {
             ctx.save();
-            ctx.setLineDash([12, 10]);
+            ctx.setLineDash([Math.round(12 * EXPORT_SCALE), Math.round(10 * EXPORT_SCALE)]);
             ctx.strokeStyle = 'rgba(160, 160, 160, 0.45)';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = Math.round(2 * EXPORT_SCALE);
             ctx.beginPath();
-            ctx.moveTo(STRIP_WIDTH, 20);
-            ctx.lineTo(STRIP_WIDTH, STRIP_HEIGHT - 20);
+            ctx.moveTo(STRIP_WIDTH, Math.round(20 * EXPORT_SCALE));
+            ctx.lineTo(STRIP_WIDTH, STRIP_HEIGHT - Math.round(20 * EXPORT_SCALE));
             ctx.stroke();
             ctx.restore();
         }
 
         // =========================================================
-        // XỬ LÝ TẢI VỀ TƯƠNG THÍCH TRÊN CẢ IOS (IPHONE) VÀ ANDROID
+        // XỬ LÝ TẢI VỀ: ƯU TIÊN SHARE SHEET CHO IPHONE/IPAD, TẢI TRỰC TIẾP CHO THIẾT BỊ KHÁC
         // =========================================================
         const fileName = `photobooth_${frame ? frame.id : 'photo'}${isDoubleActive ? '_double' : ''}_${Date.now()}.jpg`;
 
-        // 1. Chuyển Canvas sang dạng Blob binary thay vì DataURL
+        // 1. Chuyển Canvas sang dạng Blob binary
         const blob = await new Promise(resolve => canvasFinal.toBlob(resolve, 'image/jpeg', 0.95));
         if (!blob) throw new Error('Không thể tạo file ảnh.');
 
-        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        // 2. Nhận diện thiết bị iOS / iPadOS (bao gồm cả iPad chạy Safari chế độ Desktop)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        // 2. Kiểm tra nếu thiết bị hỗ trợ Web Share API (Safari iOS 15+)
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Photobooth Image',
-                    text: 'Ảnh chụp từ Photobooth'
-                });
-                return; // Chia sẻ/Lưu thành công qua iOS Native Sheet
-            } catch (err) {
-                // Người dùng bấm "Hủy" thao tác chia sẻ
-                if (err.name === 'AbortError') return;
+        // 3. Nếu là iPhone/iPad và hỗ trợ Web Share API -> Mở Share Sheet của iOS
+        if (isIOS && navigator.canShare) {
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+            if (navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Photobooth Image',
+                        text: 'Ảnh chụp từ Photobooth'
+                    });
+                    return; // Lưu/chia sẻ thành công qua iOS Native Sheet
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // Người dùng bấm Hủy
+                    // Nếu lỗi khác trên iOS, rơi xuống phương án fallback bên dưới
+                }
             }
         }
 
-        // 3. Phương án fallback cho Desktop / Android / Safari cũ
+        // 4. Tải trực tiếp file .jpg về máy cho Android, Windows, macOS...
         const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.download = fileName;
