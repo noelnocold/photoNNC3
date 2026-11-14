@@ -111,27 +111,69 @@ function updateFlashButtonTitle() {
     }
 }
 
+// Lấy luồng camera đa tầng: thử deviceId chính xác -> exact facingMode -> ideal facingMode
+async function getCameraStream(targetFacing) {
+    const baseConstraints = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+
+    // 1. Thử tìm deviceId cụ thể nếu trình duyệt đã cấp quyền và có nhiều camera
+    try {
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+            if (videoDevices.length > 1) {
+                let targetDevice = null;
+                if (targetFacing === 'environment') {
+                    targetDevice = videoDevices.find(d => /back|rear|environment|sau|world/i.test(d.label))
+                        || videoDevices[videoDevices.length - 1];
+                } else {
+                    targetDevice = videoDevices.find(d => /front|user|trước|selfie/i.test(d.label))
+                        || videoDevices[0];
+                }
+
+                if (targetDevice && targetDevice.deviceId) {
+                    try {
+                        return await navigator.mediaDevices.getUserMedia({
+                            video: { ...baseConstraints, deviceId: { exact: targetDevice.deviceId } },
+                            audio: false
+                        });
+                    } catch (deviceErr) {
+                        console.warn('getUserMedia with deviceId failed, falling back:', deviceErr);
+                    }
+                }
+            }
+        }
+    } catch (enumErr) {
+        console.warn('enumerateDevices error:', enumErr);
+    }
+
+    // 2. Thử với facingMode { exact: targetFacing }
+    try {
+        return await navigator.mediaDevices.getUserMedia({
+            video: { ...baseConstraints, facingMode: { exact: targetFacing } },
+            audio: false
+        });
+    } catch (exactErr) {
+        console.warn('exact facingMode failed, falling back to ideal:', exactErr);
+    }
+
+    // 3. Fallback an toàn nhất: facingMode { ideal: targetFacing }
+    return await navigator.mediaDevices.getUserMedia({
+        video: { ...baseConstraints, facingMode: { ideal: targetFacing } },
+        audio: false
+    });
+}
+
 // --- INITIALIZE CAMERA ---
 async function initCamera(facingMode = currentFacingMode) {
     try {
         if (stream) {
+            await setRearTorch(false);
             stream.getTracks().forEach(track => track.stop());
             stream = null;
         }
 
-        const baseConstraints = { width: { ideal: 1920 }, height: { ideal: 1080 } };
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { ...baseConstraints, facingMode: { exact: facingMode } },
-                audio: false
-            });
-        } catch (exactErr) {
-            // Fallback cho thiết bị chỉ có 1 camera (PC/Laptop) hoặc không hỗ trợ exact
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { ...baseConstraints, facingMode },
-                audio: false
-            });
-        }
+        stream = await getCameraStream(facingMode);
 
         const activeTrack = stream.getVideoTracks()[0];
         const actualFacing = activeTrack?.getSettings?.().facingMode;
@@ -367,42 +409,59 @@ const triggerScreenFlash = () => new Promise(resolve => {
 // Bật/tắt đèn flash LED phần cứng cho camera sau (nếu trình duyệt & thiết bị hỗ trợ)
 async function setRearTorch(enabled) {
     if (!stream) return false;
-    const track = stream.getVideoTracks()[0];
-    if (!track || typeof track.getCapabilities !== 'function') return false;
-    const caps = track.getCapabilities();
-    if (!caps || !caps.torch) return false;
-    try {
-        await track.applyConstraints({ advanced: [{ torch: enabled }] });
-        return true;
-    } catch (err) {
-        console.warn('Torch constraint failed:', err);
-        return false;
+    const tracks = stream.getVideoTracks();
+    if (!tracks || tracks.length === 0) return false;
+
+    let success = false;
+    for (const track of tracks) {
+        try {
+            await track.applyConstraints({
+                advanced: [{ torch: !!enabled }]
+            });
+            success = true;
+        } catch (err) {
+            console.warn('applyConstraints torch failed on track:', err);
+        }
     }
+    return success;
 }
 
 // Chụp ảnh kèm xử lý Flash phù hợp cho cả cam trước và cam sau
 async function captureWithFlash() {
     let usedTorch = false;
+
     if (isFlashOn) {
         if (currentFacingMode === 'environment') {
+            // ==============================================================
+            // CAMERA SAU: CHỈ DÙNG FLASH ĐÈN LED PHẦN CỨNG (KHÔNG DÙNG MÀN HÌNH)
+            // ==============================================================
             usedTorch = await setRearTorch(true);
             if (usedTorch) {
-                await wait(260); // Đợi đèn LED sáng và camera cân bằng sáng
-            } else {
-                // Fallback màn hình trắng nếu thiết bị (vd: iOS Safari) không hỗ trợ torch API
-                await triggerScreenFlash();
+                // Đợi 280ms để đèn LED sáng rực và camera tự động cân bằng phơi sáng
+                await wait(280);
             }
         } else {
+            // ==============================================================
+            // CAMERA TRƯỚC: DÙNG FLASH MÀN HÌNH TRẮNG
+            // ==============================================================
             await triggerScreenFlash();
         }
     }
 
-    triggerFlash(); // Chớp trắng UI trong khung camera
+    // Hiệu ứng chớp trắng viền trong khung camera:
+    // CHỈ CHẠY CHO CAMERA TRƯỚC KHI BẬT FLASH, TUYỆT ĐỐI KHÔNG CHẠY CHO CAM SAU
+    if (isFlashOn && currentFacingMode === 'user') {
+        triggerFlash();
+    }
+
+    // Chụp lại frame ảnh từ video
     const frameDataUrl = captureVideoFrame();
 
+    // Tắt đèn LED sau khi chụp xong
     if (usedTorch) {
         await setRearTorch(false);
     }
+
     return frameDataUrl;
 }
 
@@ -412,6 +471,8 @@ if (btnSwitchCamera) {
         if (isCapturing || isSwitchingCamera) return;
         isSwitchingCamera = true;
         btnSwitchCamera.disabled = true;
+        await setRearTorch(false); // Đảm bảo tắt flash cũ trước khi đổi cam
+
         if (switchCameraIcon) {
             switchCameraIcon.classList.toggle('rotate-180');
         }
@@ -435,6 +496,9 @@ btnFlashToggle.addEventListener('click', () => {
         flashIconOff.classList.remove('hidden');    // Hiện lại icon outline
         flashIconOn.classList.add('hidden');        // Ẩn icon solid
         btnFlashToggle.classList.remove('flash-btn-on');
+        if (currentFacingMode === 'environment') {
+            setRearTorch(false);
+        }
     }
     updateFlashButtonTitle();
 });
